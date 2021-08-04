@@ -1,0 +1,74 @@
+---
+title: "Final Draft"
+author: "Joseph McDonald"
+date: "4/30/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#####
+#602 Play
+
+trn.dat=read.csv("labeled.csv", stringsAsFactors = F)[, -1]
+head(trn.dat)[, 1:6]
+```
+```{r}
+#inspect data
+dim(trn.dat)
+str(trn.dat)
+```
+
+```{r}
+#check out index variables more closely
+length(unique(trn.dat$Group))
+length(unique(trn.dat$Subject))
+length(unique(trn.dat$Condition))
+
+```
+
+
+
+```{r}
+dim(trn.dat)
+#Just stupid play to see what we have.
+trn.dat.means=NULL
+inde.vars=NULL
+
+index.var=apply(trn.dat[, 1:4], 1, paste, collapse = ":")
+#table(index.var)
+uni.vars=unique(index.var)
+
+for (i in uni.vars){
+trn.dat.i=trn.dat[i==index.var, ]
+trn.mean.i=colMeans(trn.dat.i[,-(1:5)])
+inde.vars=rbind(inde.vars, trn.dat.i[1,(1:4)])
+trn.dat.means=rbind(trn.dat.means, trn.mean.i)
+}
+```
+
+
+
+```{r}
+trn.dat.means=NULL
+inde.vars=NULL
+
+#view 
+index.var=apply(trn.dat[, 1:4], 1, paste, collapse = ":")
+index.var.tab <- data.frame(table(index.var))
+#median(index.var.tab$Freq)
+
+#inspect observations with few segments
+insp <- index.var.tab[index.var.tab$Freq < 15,]
+insp
+
+```
+
+
+```{r}
+
+
+```

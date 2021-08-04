@@ -1,0 +1,133 @@
+---
+title: "STAT 602 Final Project"
+author: "cps"
+date: "4/20/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+```
+
+# Kinematic Features Final Project (STAT 602 2020)
+## Instructions
+*This project is intended to give you practice of doing "skunk work" i.e. finding out if something is possible and reasonable to pursue.*
+
+
+You will work by yourself to prepare a 15-minute presentation on the problem background; model building process and your recommendations.  Provide a short white paper of your model building process, the selected model, and the model's properties.  Include annotated code that replicates your analysis.  **MAKE SURE YOU PROPERLY REFERENCE ANY MATERIAL YOU USE IN THIS EXAM-this is an easy way to fail the final and course!!**
+
+
+*Due to internet upload speeds and connectivity issues we will not have an in person presentation.*
+
+_Due Date-_ We will use the in person final exam time as the due date for the **Wednesday 11:30 a.m. - 1:30 p.m. May 6, 2020 Central Standard Time**.  It is not required but if you would like to present your work to me at this time I will be available in zoom.  
+
+>If you need additional time or any other concerns please let me know sooner than later so that we can make alternative arrangements.
+
+
+
+
+## Background
+Recently I have been working with a team of researchers (Lead by Prof. Michael Caliguri) exploring the relationship between kinematics of handwritten text and the ability of forensic document examiners to determine if two documents were written by the same writer.
+
+A side debate has started among the team concerning whether or not the the statisticians and machine learning experts could build a reasonably accurate classifier that predicts three things at once 
+1. The writer of a short note (40 writers)
+2. Which of 6 phrase was written
+3. What type/style of writing was used (Print or Script)
+Based on the kinematic features recorded by MovAlyzeR.
+  
+## Data structure
+
+The column Labels of the data are as follows (This is the basic output order from MovAlyzeR.) Please see the provide powerpoints and papers for details.
+
+1. Group- The type of handwriting- either Cursive or print.
+2. Subject is the writer of the handwriting sample.
+3. Condition- Is the Phrase that is being written.
+4. Trial is one handwriting sample
+5. Segment is one part of the writing sample a 'stroke'.
+6. Direction- if the stroke is up or down.
+7. StartTime- When the segment was started to be written.
+8. Duration- How long it has taken to complete the segment.
+9. VerticalSize                      
+10. PeakVerticalVelocity              
+11. PeakVerticalAcceleration                     
+12. HorizontalSize                   
+13. StraightnessError                 
+14. Slant                             
+15. LoopSurface                       
+16. RelativeInitialSlant              
+17. RelativeTimeToPeakVerticalVelocity
+18. RelativePenDownDuration           
+19. RelativeDurationofPrimary         
+20. RelativeSizeofPrimary             
+21. AbsoluteSize                      
+22. AverageAbsoluteVelocity           
+23. Roadlength                       
+24. AbsoluteyJerk                     
+25. NormalizedyJerk                   
+26. AverageNormalizedyJerkPerTrial    
+27. AbsoluteJerk                     
+28. NormalizedJerk                    
+29. AverageNormalizedJerkPerTrial                                
+30. NumberOfPeakAccelerationPoints   
+31. AveragePenPressure                
+
+
+## Data Sets
+
+You will be provided with 
+
+1. labeled.csv
+2. example of unlabeled data to design your predictions on my unlabeled data set on my computer. (There are two documents to classify.)
+
+```{r}
+labeled.dat=read.csv("labeled.csv", stringsAsFactors=F)[,-1]
+#str(labeled.dat)
+
+unlab.example.trial=
+  read.csv("unlab.example.trial.csv", stringsAsFactors=F)[,-1]
+#str(unlab.example.trial)
+
+xtabs(~Trial+Condition+Group+Subject, labeled.dat)
+
+
+
+```
+
+
+## Grading
+	
+>Your grade (either pass or fail) and will be determined by three components:
+	
+	
+1. The write-up of the methods you have used in building your classifiers.
+
+		 > i- You should use multiple classification methods and document how you constructed them.
+		 
+		 > ii- YOU NEED TO PROVIDE AN ESTIMATE OF THE ACCURACY OF THE CLASSIFIER IN YOUR WRITE UP!
+		
+1. You will need to provide an estimate of the accuracy of the classifier you build when applied to the third dataset of that I will use your code on. (Please make sure that you explain how to get your predictions.)
+2. Your knowledge of the material in Stat 601, Stat 602, and the methods used in constructing your classifiers as demonstrated by the white paper component of the exam.
+	
+You will need to turn in four components (**Parts 1, 2, 3, and 4 are Due at Wednesday 11:30 a.m. - 1:30 p.m. May 6, 2020 Central Standard Time**): 
+	
+* An annotated R-script that build your classifier off of labeled.csv. 
+* A write-up on the construction on your classifier. (Whitepaper approx. 2 pages written text max. Tables and plots do not count.)
+* A powerpoint presentation discussing the work you have done on the project.
+* A second annotated R-script that predicts the class for a set on unlabeled observations that I can run on my computer. I will provide an example of how the this data set will be formatted. 
+		
+	
+	
+	
+>Do ask me (or the GTAs) for help if you are having trouble.   Beware this is a rather open ended question.
+
+> Start early get something that works then come back and build up a better solution.
+	
+	
+	Good Luck
+	
+	-cps
+	
+
