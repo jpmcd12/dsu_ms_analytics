@@ -1,0 +1,159 @@
+---
+title: "STAT 601 Final Project: Microtus Data Set"
+author: "Joseph McDonald"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=F,warning=F,echo=F,fig_height=10,fig_width=7,cache = F)
+```
+
+```{r}
+#packages
+library(ggplot2)
+library(GGally)
+library(boot)
+library(pROC)
+```
+
+```{r, include=FALSE}
+data("microtus", package = "Flury")
+head(microtus)
+summary(microtus)
+
+sum(is.na(microtus))
+```
+##### Introduction
+
+The problem at hand is to classify the Microtus subterraneus and Microtus Multiplex based upon morphological data alone. We will use the \textbf{Microtus} dataset from the \textbf{Flury} package which includes 89 specimens whose chromosomes were analyzed to determine the correct species and 199 specimens with unknown species. We will attempt to fit and find the best generalized linear model using the data with given species with the goal of accurately predicting the species of the 199 unknown specimens.
+
+```{r,include=FALSE}
+m.train <- subset(microtus, Group != "unknown")
+m.test <- subset(microtus, Group == "unknown")
+m.test
+```
+
+```{r, include=FALSE}
+summary(m.train)
+summary(m.test)
+```
+
+##### Exploration
+
+We begin by briefly exploring the data set. This data set contains eight predictor variables and the response variable, \textbf{Group}. There are no missing values and a brief look at the summary does not reveal any large concerns. After this examination, we split the data into two sets: a training set \textit{m.train} which contains all specimens for which the species is known, a test set \textit{m.test} containing the 199 specimen for which we do not know the species. We will now set aside our test set until the best model is chosen and use the training set for further analysis.
+
+We examine a pairs plot of the training data for an overview of the relationship of the predictor variables to each other and the response variable. The first thing that jumps out is the scatter plots for the variable \textbf{M1Left}. We notice that there is a relatively high linear correlation between between \textbf{M1Left} and all of the other predictor variables accept for \textbf{Foramen}. We also note in both the box plot and scatter plots for \textbf{M1Left} that there seems to be a pretty clear distinction between the two classes of the response variable. Because of this we might expect \textbf{M1Left} to be a good predictor variable for our generlized linear model. Even though there are a lot of high correlations between predictor variables, none are high enough to warrant removing any predictor variables at this time.
+
+```{r, fig.height = 7, fig.width=12, warnings=FALSE, messages = FALSE}
+ggpairs(m.train, mapping = ggplot2::aes(color = Group),  upper = list(continuous = wrap("cor", size = 3, hjust=0.15, alignPercent=1)), progress = FALSE) + theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+```
+
+\newpage
+##### Model Training and Selection
+
+Next we will fit several GLM models and use the step function in R for variable selection using AIC as the discrimant criterion. We will try all three feature selection methods and compare the results to help determine our best model. The "backward", "forward", and "both" directions of feature selection return the following GLM formulas respectively:
+
+```{r, include=FALSE}
+#fit GLM
+m.glm0 <- glm(Group ~ M1Left, data = m.train, family = binomial())
+m.glm1 <- glm(Group ~ ., data=m.train, family = binomial())
+```
+
+```{r, include=FALSE}
+#use step function for variable selection
+#backward
+step.bw <- step(m.glm1)
+
+#forward
+step.fw <- step(m.glm0, scope = formula(m.glm1), direction="forward")
+
+#both
+step.b <- step(m.glm0, scope = formula(m.glm1), direction="both")
+```
+
+```{r}
+#print formulas
+step.bw$formula
+step.fw$formula
+step.b$formula
+```
+
+We will now fit two new GLM models using the predictor variables selected by the step function. An ANOVA test for the two models returns the p-value shown below which indicates that there is not a statistically significant difference between the simple and more complex models. Therefore, we chose the simple model, with only \textbf{M1Left} and \textbf{Foramen} as predictor variables. The selection of this model as the best model is also backed up by our earlier observations that \textbf{M1Left} appeared to be a strong predictor variable and was highly correlated with all of the other predictor variables except \textbf{Foramen}. While the correlations were not strong enough for us to eliminate any variables early on, intuitively, it makes sense that the best model would need only these two variables. 
+
+```{r, include=FALSE}
+#fit new models based upon selection methods test using CV
+#Model 1 based on forward and both selection methods
+m.model1 <- glm(Group ~ M1Left + Foramen, data = m.train, family = binomial())
+
+#model 2 based on backward selection
+m.model2 <- glm(Group ~ M1Left + M3Left + Foramen + Length + Height,  data = m.train, family = binomial())
+```
+
+
+```{r}
+#ANOVA test to determine which suggested model to use
+#anova(m.model1, m.model2, test="Chisq")
+
+#p-value for ANOVA test
+print(paste("p-value =", anova(m.model1, m.model2, test="Chisq")$"Pr(>Chi)"[2]))
+  
+```
+
+##### Model Evaluation
+
+Lastly we move on to evaluate our model. Because our training set is very small we will use 10-fold cross validation to determine the error rate. We also examine the ROC curve and return the AUC.
+
+```{r}
+#cross validation for m.model1
+set.seed(51419)
+
+#define cost function
+cost <- function(r, pi = 0){
+  mean(abs(r-pi) > 0.5)
+}
+
+kcv_model1 <- cv.glm(m.train, m.model1, cost, K=10)$delta[1]
+print(paste("10-fold Cross Validation Error Rate =", kcv_model1))
+```
+
+
+
+```{r, fig.height = 2.5, fig.width=2.5, fig.align="center"}
+#roc
+m.prob <- predict(m.model1, type="response")
+m.train$prob <- m.prob
+m.model1.roc <- roc(Group ~ prob, data = m.train)
+
+#AUC
+auc(m.model1.roc)
+
+#plot ROC
+ggroc(m.model1.roc) + ggtitle("ROC Curve") + xlab("Specificity") + ylab("Sensitivity")
+```
+
+The shape of the ROC curve and the AUC of .9889 indicate that our model is a very good fit of the training data. Any concerns of potential overfitting are mitigated by the low cross-validation error rate which is just under 6%.
+
+```{r, include=FALSE}
+#make predictions
+predict.model1 <- predict(m.model1, newdata = m.test, type = "response")
+predict.class.model1 <- factor(ifelse(predict.model1>=0.50,"subterraneus","multiplex"), levels=c("subterraneus","multiplex"))
+
+#append predictions to test set and write to csv
+m.test$Predictions <- predict.class.model1
+
+write.csv(m.test, "E:\\OneDrive\\DSU\\STAT 601\\Final Project\\microtus.prections.jmcdonald.csv",row.names = FALSE)
+```
+
+\newpage
+##### Conclusions and Recommendations
+
+Based upon the results of our model evaluation we conclude that our model ought to preform very well on new data. Through cross-validation we determined that the model performs well on "new" data with approximately 94% accuracy. Additionally, The ROC curve indicates that that this model can achieve a balance of both high sensitivity and specificity indicating that the error in the model should not be skewed toward either class. That is to say, that misclassifying either species as the other is roughly equally likely and in both cases this likelihood is relativley low. This model would be useful for determining the correct species of microtus for the specimens in situations in which  high precision is not necessary. With this model we would expect that about 1 in 20 specimens would be missclassified. This could be very useful in some cases, such as identifying populations of microtus or summary investigations. On the other hand, for more precise scientific study, such as further study of the differences bewteen the two species, this model would not be accurate enough to provide reliable results.
+
+
+##### Citations
+Citation 1: https://stackoverflow.com/questions/8599685/how-to-change-correlation-text-size-in-ggpairs Changing font size for correlation text in ggpairs. \
+Citation 2: https://stackoverflow.com/questions/41577362/suppress-ggpairs-messages-when-generating-plot Suppressing plot progress for ggpairs. \
+Citation 3: https://rdrr.io/cran/pROC/man/ggroc.html assistance plotting roc in ggplot
